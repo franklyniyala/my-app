@@ -20,7 +20,6 @@ pipeline {
         withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
             sh '''
             docker run --rm \
-            -e SONAR_TOKEN=$SONAR_TOKEN \
             -v $(pwd):/usr/src \
             sonarsource/sonar-scanner-cli \
             -Dsonar.projectKey=frank-org_my-app \
