@@ -27,9 +27,6 @@ pipeline {
                     -Dsonar.organization=frank-org \
                     -Dsonar.sources=. \
                     -Dsonar.exclusions=node_modules/**,public/** \
-                    -Dsonar.tests=. \
-                    -Dsonar.test.inclusions=test.js \
-                    -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
                     -Dsonar.host.url=https://sonarcloud.io \
                     '''
 
