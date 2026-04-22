@@ -50,7 +50,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh '''
-                docker build -t my-app:latest .
+                docker build -t my-app:latest -f nodejs-getting-started/Dockerfile .
                 docker tag my-app:latest $REPOSITORY_URI:latest
                 '''
             }
@@ -70,6 +70,10 @@ pipeline {
             echo ' ✅ SonarQube Analysis Successful!'
             echo ' ✅ Docker Image Built and Pushed to ECR! 🚀'
             echo 'Pushed Image: $REPOSITORY_URI:latest'
+        }
+
+        failure {
+            echo ' ❌ Build failed. Check logs for details.'
         }
     }
 }
