@@ -16,23 +16,23 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]){
-                    sh '''
-                    docker run --rm \
-                    -e SONAR_TOKEN=$SONAR_TOKEN \
-                    -v $(pwd):/usr/src \
-                    sonarsource/sonar-scanner-cli \
-                    -Dsonar.projectKey=frank-org_my-app \
-                    -Dsonar.organization=frank-org \
-                    -Dsonar.sources=. \
-                    -Dsonar.exclusions=node_modules/**,public/** \
-                    -Dsonar.host.url=https://sonarcloud.io \
-                    '''
-
-                }
-            }
+    steps {
+        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+            sh '''
+            docker run --rm \
+            -e SONAR_TOKEN=$SONAR_TOKEN \
+            -v $(pwd):/usr/src \
+            sonarsource/sonar-scanner-cli \
+            -Dsonar.projectKey=frank-org_my-app \
+            -Dsonar.organization=frank-org \
+            -Dsonar.sources=. \
+            -Dsonar.exclusions=node_modules/**,public/** \
+            -Dsonar.host.url=https://sonarcloud.io \
+            -Dsonar.login=$SONAR_TOKEN
+            '''
         }
+    }
+}
 
         stage ('Login to ECR') {
             steps {
