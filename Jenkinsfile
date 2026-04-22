@@ -50,7 +50,7 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh '''
-                docker build -t my-app:latest -f nodejs-getting-started/Dockerfile .
+                docker build -t my-app:latest .
                 docker tag my-app:latest $REPOSITORY_URI:latest
                 '''
             }
