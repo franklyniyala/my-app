@@ -63,6 +63,14 @@ pipeline {
                 '''
             }
         }
+
+        stage('Deploy application') {
+            steps {
+                sh '''
+                docker run -d -p 5006:5006 $REPOSITORY_URI:latest
+                '''
+            }
+        }
     }
 
     post {
