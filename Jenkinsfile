@@ -62,7 +62,7 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 withCredentials([file(crededentialsId: 'KUBE_CONFIG_DEVOPS', variable: 'KUBECONFIG')
-                aws(credentilasId: 'AWS_CRED_LOGIN', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable:
+                aws(credentialsId: 'AWS_CRED_LOGIN', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable:
                 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                         export KUBECONFIG=$KUBECONFIG
