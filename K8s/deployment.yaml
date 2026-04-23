@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: ECR_URI:latest
+        image: 139156132664.dkr.ecr.us-east-1.amazonaws.com/my-app-repo:latest
         ports:
         - containerPort: 3000
         readinessProbe:

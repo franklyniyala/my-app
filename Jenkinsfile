@@ -77,9 +77,6 @@ pipeline {
                 helm repo update
                 helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
 
-                echo "Updating image tag in deployment.yaml..."
-                sed -i 's|image:ECR_URI:latest|${REPOSITORY_URI}:latest|g' K8s/deployment.yaml
-
                 echo "Applying Kubernetes Manifests..."
                 kubectl apply -f K8s/
 
