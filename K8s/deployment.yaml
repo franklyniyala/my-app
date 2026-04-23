@@ -18,17 +18,17 @@ spec:
       - name: app
         image: 139156132664.dkr.ecr.us-east-1.amazonaws.com/my-app-repo:latest
         ports:
-        - containerPort: 3000
+        - containerPort: 5006
         readinessProbe:
           httpGet:
             path: /health
-            port: 3000
+            port: 5006
           initialDelaySeconds: 5
           periodSeconds: 10
         livenessProbe:
           httpGet:
             path: /health
-            port: 3000
+            port: 5006
           initialDelaySeconds: 15
           periodSeconds: 20
         resources:
