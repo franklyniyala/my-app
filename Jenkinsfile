@@ -19,15 +19,14 @@ pipeline {
     steps {
         withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
             sh '''
-            docker run --rm \
-            -v $(pwd):/usr/src \
-            sonarsource/sonar-scanner-cli \
-            -Dsonar.projectKey=frank-org_my-app \
-            -Dsonar.organization=frank-org \
-            -Dsonar.sources=. \
-            -Dsonar.exclusions=node_modules/**,public/** \
-            -Dsonar.host.url=https://sonarcloud.io \
-            -Dsonar.login=$SONAR_TOKEN
+                docker run --rm \
+                -e SONAR_TOKEN=$SONAR_TOKEN \
+                -v $(pwd):/usr/src \
+                sonarsource/sonar-scanner-cli \
+                -Dsonar.projectKey=frank-org_my-app \
+                -Dsonar.organization=frank-org \
+                -Dsonar.sources=. \
+                -Dsonar.host.url=https://sonarcloud.io \
             '''
         }
     }
@@ -37,7 +36,7 @@ pipeline {
             steps {
                 withCredentials([aws(credentialsId: 'AWS_CRED_LOGIN', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
-                    aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
+                        aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
                     '''
                 }
             }
@@ -46,8 +45,8 @@ pipeline {
         stage('Build Image') {
             steps {
                 sh '''
-                docker build -t my-app:latest .
-                docker tag my-app:latest $REPOSITORY_URI:latest
+                    docker build -t my-app:latest .
+                    docker tag my-app:latest $REPOSITORY_URI:latest
                 '''
             }
         }
@@ -55,17 +54,38 @@ pipeline {
         stage('Push Image to ECR') {
             steps {
                 sh '''
-                docker push $REPOSITORY_URI:latest
+                    docker push $REPOSITORY_URI:latest
                 '''
             }
         }
 
-        stage('Deploy application') {
+        stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                docker run -d -p 5006:5006 $REPOSITORY_URI:latest
-                '''
+                withCredentials([file(crededentialsId: 'KUBE_CONFIG_DEVOPS', variable: 'KUBECONFIG')
+                aws(credentilasId: 'AWS_CRED_LOGIN', accessKeyVariable: 'AWS_ACCESS_KEY_ID', secretKeyVariable:
+                'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        export KUBECONFIG=$KUBECONFIG
+                        export AWS_REGION=us-east-1
+
+                        echo "Installing Prometheus monitor..."
+                        helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                        helm repo update
+                        helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+
+                        echo 'Updating image tag in Deployment.yaml...'
+                        sed -i 's|image:ERC_URI:latest|${REPOSITORY_URI}:latest|g' K8s/deployment.yaml
+
+                        echo 'Applying Kubernetes Manifests...'
+                        kubectl apply -f K8s/
+
+                        echo 'Verifying Rollout...'
+                        kubectl rollout status deployment/my-app
+                    '''
+                }
+                
             }
+
         }
     }
 
@@ -73,7 +93,8 @@ pipeline {
         success {
             echo ' ✅ SonarQube Analysis Successful!'
             echo ' ✅ Docker Image Built and Pushed to ECR! 🚀'
-            echo 'Pushed Image: $REPOSITORY_URI:latest'
+            echo ' ✅ Kubernetes Deployment Successful! 🎉'
+            echo "Pushed Image: $REPOSITORY_URI:latest"
         }
 
         failure {
