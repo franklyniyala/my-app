@@ -16,21 +16,21 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-    steps {
-        withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
-            sh '''
-                docker run --rm \
-                -e SONAR_TOKEN=$SONAR_TOKEN \
-                -v $(pwd):/usr/src \
-                sonarsource/sonar-scanner-cli \
-                -Dsonar.projectKey=frank-org_my-app \
-                -Dsonar.organization=frank-org \
-                -Dsonar.sources=. \
-                -Dsonar.host.url=https://sonarcloud.io \
-            '''
+            steps {
+                withCredentials([string(credentialsId: 'SONAR_TOKEN', variable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        docker run --rm \
+                        -e SONAR_TOKEN=$SONAR_TOKEN \
+                        -v $(pwd):/usr/src \
+                        sonarsource/sonar-scanner-cli \
+                        -Dsonar.projectKey=frank-org_my-app \
+                        -Dsonar.organization=frank-org \
+                        -Dsonar.sources=. \
+                        -Dsonar.host.url=https://sonarcloud.io \
+                    '''
+                }
+            }
         }
-    }
-}
 
         stage ('Login to ECR') {
             steps {
@@ -59,31 +59,37 @@ pipeline {
             }
         }
 
+      
         stage('Deploy to Kubernetes') {
-    steps { 
-            withCredentials([aws(credentialsID: 'AWS_CRED_LOGIN', accessKeyVariable: AWS_ACCESS_KEY_ID, secretKeyVariable: AWS_SECRET_ACCESS_KEY),
-        
-            file(credentialsId: 'KUBE_CONFIG_DEVOPS', variable: 'KUBECONFIG'),
-        ]) {
-            sh """
-                export KUBECONFIG=$KUBECONFIG
-                export AWS_REGION=us-east-1
-                aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REPOSITORY_URI
-
-                echo "Installing Prometheus monitor..."
-                helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
-                helm repo update
-                helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
-
-                echo "Applying Kubernetes Manifests..."
-                kubectl apply -f K8s/
-
-                echo "Verifying Rollout..."
-                kubectl rollout status deployment/my-app
-            """
+            steps {
+                withCredentials([aws(credentialsId: 'AWS_CRED_LOGIN', 
+                    accessKeyVariable: 'AWS_ACCESS_KEY_ID', 
+                    secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
+                    sh '''
+                        aws eks update-kubeconfig --region $AWS_REGION --name devops-eks
+                        kubectl apply -f k8s/
+                    '''
+                }
+            }
         }
-    }
-}
+        
+        stage('Install Prometheus Monitor') {
+            steps {
+                sh '''
+                    echo "Installing Prometheus monitor..."
+                    helm repo add prometheus-community https://prometheus-community.github.io/helm-charts || true
+                    helm repo update
+                    helm upgrade --install prometheus prometheus-community/kube-prometheus-stack --namespace monitoring --create-namespace
+
+                    echo "Applying Kubernetes Manifests..."
+                    kubectl apply -f K8s/
+
+                    echo "Verifying Rollout..."
+                    kubectl rollout status deployment/my-app
+                    '''
+            }
+        }
+
     }
 
     post {
