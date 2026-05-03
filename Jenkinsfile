@@ -67,12 +67,12 @@ pipeline {
                     secretKeyVariable: 'AWS_SECRET_ACCESS_KEY')]) {
                     sh '''
                         aws eks update-kubeconfig --region $AWS_REGION --name devops-eks
-                        kubectl apply -f k8s/
+                        kubectl apply -f K8s/
                     '''
                 }
             }
         }
-        
+
         stage('Install Prometheus Monitor') {
             steps {
                 sh '''
